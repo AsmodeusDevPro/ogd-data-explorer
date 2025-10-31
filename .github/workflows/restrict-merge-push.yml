@@ -1,0 +1,35 @@
+name: Restrict Merge and Push to Main
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+jobs:
+  prevent-direct-push:
+    # This job runs only on direct pushes to main
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Block direct pushes to main
+        run: |
+          echo "❌ Direct pushes to 'main' are not allowed. Please open a pull request from 'integration'."
+          exit 1
+
+  check-merge-source:
+    # This job runs only for pull requests targeting main
+    if: github.event_name == 'pull_request' && github.base_ref == 'main'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check if source branch is 'integration'
+        run: |
+          echo "🔍 Checking PR source branch..."
+          echo "Source branch: ${{ github.head_ref }}"
+          echo "Base branch: ${{ github.base_ref }}"
+          if [[ "${{ github.head_ref }}" != "integration" ]]; then
+            echo "❌ Merge blocked: Only 'integration' branch can be merged into 'main'."
+            exit 1
+          else
+            echo "✅ Merge allowed: 'integration' → 'main'."
+          fi
